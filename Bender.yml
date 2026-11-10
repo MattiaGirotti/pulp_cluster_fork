@@ -84,19 +84,9 @@ sources:
   # SPMM
   - rtl/regif/spmm_regif_pkg.sv
   - rtl/regif/spmm_regif.sv
-  - rtl/hwpe_stream_package.sv
-  - rtl/hwpe_ctrl_package.sv 
-  - rtl/hwpe_ctrl_intf_periph.sv
-  - rtl/hci_package.sv
-  - rtl/hci_interfaces.sv
-  - rtl/spmm_pkg.sv
-  - rtl/spmm_target_decoder.sv 
   - rtl/hwpe_ctrl_target.sv
-  - rtl/assertions.svh
-  - rtl/registers.svh
-  - rtl/cc_pkg.sv
-  - rtl/cc_fifo.sv
-  - rtl/fifo_v3.sv
+  - rtl/spmm_pkg.sv
+  - rtl/spmm_target_decoder.sv
   - rtl/a_buffer.sv
   - rtl/b_buffer.sv
   - rtl/c_buffer.sv
@@ -105,7 +95,7 @@ sources:
   - rtl/mac_int8.sv
   - rtl/datapath.sv
   - rtl/scheduler.sv
-  - rtl/streamer.sv 
+  - rtl/streamer.sv
   - rtl/spmm_top.sv
 
   - target: test

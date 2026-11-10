@@ -143,6 +143,7 @@ module hwpe_subsystem
       /////////////
 
     spmm_top #(
+    .N_CORES ( N_CORES ),      // Number of cores
     .DATA_WIDTH ( 8 ),          // INT8 data width
     .NUM_MACS   ( 16 ),          // Parallel MAC units
     .NUM_ROWS   ( 16 ),          // Number of rows
@@ -151,7 +152,7 @@ module hwpe_subsystem
     .STREAM_WORD_BIT ( 128 ),         // PULP Streamer word width
     .DATA_WIDTH_OUT  ( 8 ),           // Output precision
     .USE_LATCHES     ( 0 )            // 1: Clock Gating + Latches, 0: Flip-Flops
-    )(
+    ) i_spmm_top (
     .clk_i( hwpe_clk[i] ),
     .rst_ni( rst_n ),
     .evt_o( evt[i] ),

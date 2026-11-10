@@ -145,7 +145,7 @@ venv:
 generate_idma_rtl: venv
 	. "$(VENV)/bin/activate" && $(MAKE) -C $(shell bender path idma) idma_hw_all
 
-compile: $(library)
+compile: $(library) scripts/compile.tcl
 	@test -f Bender.lock || { echo "ERROR: Bender.lock file does not exist. Did you run make checkout in bender mode?"; exit 1; }
 	@test -f scripts/compile.tcl || { echo "ERROR: scripts/compile.tcl file does not exist. Did you run make scripts in bender mode?"; exit 1; }
 	$(VSIM) -c -do 'quit -code [source scripts/compile.tcl]'

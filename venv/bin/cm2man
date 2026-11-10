@@ -1,0 +1,6 @@
+#!/srv/home/mattia.girotti3/pulp_cluster_fork/venv/bin/python3
+import sys
+from recommonmark.scripts import cm2man
+if __name__ == '__main__':
+    sys.argv[0] = sys.argv[0].removesuffix('.exe')
+    sys.exit(cm2man())

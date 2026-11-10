@@ -7,6 +7,7 @@ import hwpe_ctrl_package::*;
 import spmm_pkg::*;     
 
 module spmm_top #(
+    parameter int unsigned N_CORES = 8,
     parameter int unsigned DATA_WIDTH      = 8,           // INT8 data width
     parameter int unsigned NUM_MACS        = 16,          // Parallel MAC units
     parameter int unsigned NUM_ROWS        = 16,          // Number of rows
@@ -31,7 +32,7 @@ module spmm_top #(
     // -------------------------------------------------------------------------
     // Segnali interni per il decoder e la configurazione
     // -------------------------------------------------------------------------
-    spmm_config_t accel_config;
+    spmm_pkg::spmm_config_t accel_config;
     logic         accel_config_valid;
     logic         target_clear;
     //logic         done_o;
@@ -49,7 +50,7 @@ module spmm_top #(
         .rst_ni           ( rst_ni             ),
         .target_clear_o   ( target_clear       ),
         .config_ready_i   ( ~busy_o            ),
-        .op_done_i        ( evt_o             ),
+        .op_done_i        ( evt_o   ),
         .config_valid_o   ( accel_config_valid ),
         .config_o         ( accel_config       ),
         .target           ( target             )

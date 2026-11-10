@@ -63,7 +63,8 @@ module cluster_interconnect_wrap
   XBAR_TCDM_BUS.Slave                  mperiph_slave     [NB_MPERIPHS-1 : 0              ],
   hci_core_intf.initiator              tcdm_sram_master  [0             : NB_TCDM_BANKS-1],
   XBAR_PERIPH_BUS.Master               speriph_master    [NB_SPERIPHS-1 : 0              ],
-  input hci_interconnect_ctrl_t        hci_ctrl_i,
+  //input hci_interconnect_ctrl_t        hci_ctrl_i,
+  input hci_package::hci_interconnect_ctrl_t hci_ctrl_i,
   input logic [1:0]                    TCDM_arb_policy_i
 );
 

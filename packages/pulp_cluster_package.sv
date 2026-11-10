@@ -36,7 +36,8 @@ package pulp_cluster_package;
   typedef enum byte_t {
     REDMULE,
     NEUREKA,
-    SOFTEX
+    SOFTEX,
+    SPMM
   } hwpe_type_e;
 
   localparam int unsigned MAX_NUM_HWPES = 8;
@@ -218,8 +219,10 @@ package pulp_cluster_package;
     TcdmSize: 128*1024,
     TcdmNumBank: 16,
     HwpePresent: 1,
-    HwpeCfg: '{NumHwpes: 3, HwpeList: {SOFTEX, NEUREKA, REDMULE}},
+    HwpeCfg: '{NumHwpes: 4, HwpeList: {SOFTEX, NEUREKA, REDMULE, SPMM}},
+    //HwpeCfg: '{NumHwpes: 1, HwpeList: {SPMM}},
     HwpeNumPorts: 9,
+    //HwpeNumPorts: 4,
     HMRPresent: 1,
     HMRDmrEnabled: 1,
     HMRTmrEnabled: 1,
