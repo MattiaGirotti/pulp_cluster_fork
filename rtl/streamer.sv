@@ -94,10 +94,14 @@ module streamer #(
     // Registro dinamico per memorizzare il numero di parole calcolato dall'ultimo row_ptr
     logic [15:0] dynamic_words_q, dynamic_words_d;
 
-    // TCDM Control Assignments
-    assign tcdm_master.be      = 16'hFFFF; 
+    // TCDM Control Assignments. The cluster HCI interface can be wider than
+    // this streamer's 128-bit beat; enable/use only the low 16 byte lanes.
+    assign tcdm_master.be      = 16'hFFFF;
     assign tcdm_master.user    = '0;
     assign tcdm_master.id      = '0;
+    // The virtual (pre-ECC) interface carries no data ECC. The wrapper above
+    // computes the metadata ECC consumed by the cluster ECC interconnect.
+    assign tcdm_master.ecc     = '0;
     assign tcdm_master.r_ready = 1'b1;
     assign tcdm_master.ereq    = '0;
     assign tcdm_master.r_eready= 1'b1;
@@ -149,13 +153,13 @@ module streamer #(
 
         // Buffer Writes Defaults
         a_write_en_o       = 1'b0;
-        a_wdata_o          = tcdm_master.r_data;
+        a_wdata_o          = tcdm_master.r_data[STREAM_WORD_BIT-1:0];
         b_write_en_o       = 1'b0;
-        b_wdata_o          = tcdm_master.r_data;
+        b_wdata_o          = tcdm_master.r_data[STREAM_WORD_BIT-1:0];
         col_id_write_en_o  = 1'b0;
-        col_id_wdata_o     = tcdm_master.r_data;
+        col_id_wdata_o     = tcdm_master.r_data[STREAM_WORD_BIT-1:0];
         row_ptr_write_en_o = 1'b0;
-        row_ptr_wdata_o    = tcdm_master.r_data;
+        row_ptr_wdata_o    = tcdm_master.r_data[STREAM_WORD_BIT-1:0];
 
         c_read_row_addr_o  = c_row_cnt_q;
         c_read_word_addr_o = '0;
@@ -231,7 +235,13 @@ module streamer #(
 
             // --- 3. STREAM IN: MATRIX A NNZ (Usa dynamic_words_q) ---
             ST_LD_A: begin
-                if (req_cnt_q < dynamic_words_q) begin
+                // An all-zero matrix has no A/ColID beats. Avoid comparing
+                // resp_cnt against dynamic_words-1 when dynamic_words is zero.
+                if (dynamic_words_q == 0) begin
+                    req_cnt_d  = '0;
+                    resp_cnt_d = '0;
+                    state_d    = ST_RUN_ACCEL;
+                end else if (req_cnt_q < dynamic_words_q) begin
                     tcdm_master.req = 1'b1;
                     tcdm_master.wen = 1'b1;
                     if (tcdm_master.gnt) begin
