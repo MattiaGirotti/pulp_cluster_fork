@@ -143,7 +143,6 @@ module hwpe_subsystem
       /////////////
 
     spmm_top #(
-    .N_CORES    ( N_CORES ),
     .DATA_WIDTH ( 8 ),          // INT8 data width
     .NUM_MACS   ( 16 ),          // Parallel MAC units
     .NUM_ROWS   ( 16 ),          // Number of rows
@@ -151,11 +150,8 @@ module hwpe_subsystem
     .TOTAL_PTRS      ( 17 ),          // Total row pointers
     .STREAM_WORD_BIT ( 128 ),         // PULP Streamer word width
     .DATA_WIDTH_OUT  ( 8 ),           // Output precision
-    .USE_LATCHES     ( 0 ),
-    .HCI_DW          ( DW  ),
-    .HCI_AW          ( AW  ),
-    .HCI_EW          ( EW  ),
-    .HCI_EHW         ( EHW )
+    .N_CORES    ( N_CORES ),
+    .USE_LATCHES     ( 0 )
     ) i_spmm_top (
     .clk_i( hwpe_clk[i] ),
     .rst_ni( rst_n ),
