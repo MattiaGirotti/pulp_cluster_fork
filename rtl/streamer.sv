@@ -94,13 +94,14 @@ module streamer #(
     // Registro dinamico per memorizzare il numero di parole calcolato dall'ultimo row_ptr
     logic [15:0] dynamic_words_q, dynamic_words_d;
 
-    // TCDM Control Assignments. The cluster HCI interface can be wider than
-    // this streamer's 128-bit beat; enable/use only the low 16 byte lanes.
+    // TCDM virtual-interface control assignments. ECC encoding/decoding is
+    // performed by hci_ecc_enc in spmm_top; this side is intentionally raw.
+    // The streamer uses only the low 128 data bits / 16 byte lanes.
     assign tcdm_master.be      = 16'hFFFF;
     assign tcdm_master.user    = '0;
     assign tcdm_master.id      = '0;
-    // The virtual (pre-ECC) interface carries no data ECC. The wrapper above
-    // computes the metadata ECC consumed by the cluster ECC interconnect.
+    // This virtual interface carries no ECC. hci_ecc_enc in spmm_top generates
+    // both request-data ECC and request-metadata ECC for the cluster interface.
     assign tcdm_master.ecc     = '0;
     assign tcdm_master.r_ready = 1'b1;
     assign tcdm_master.ereq    = '0;

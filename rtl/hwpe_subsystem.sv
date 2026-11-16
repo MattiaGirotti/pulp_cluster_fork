@@ -151,7 +151,8 @@ module hwpe_subsystem
     .STREAM_WORD_BIT ( 128 ),         // PULP Streamer word width
     .DATA_WIDTH_OUT  ( 8 ),           // Output precision
     .N_CORES    ( N_CORES ),
-    .USE_LATCHES     ( 0 )
+    .USE_LATCHES     ( 0 ),
+    .`HCI_SIZE_PARAM(tcdm_master) ( HCI_HWPE_SIZE )
     ) i_spmm_top (
     .clk_i( hwpe_clk[i] ),
     .rst_ni( rst_n ),

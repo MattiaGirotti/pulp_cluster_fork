@@ -2,9 +2,11 @@
 // Module: spmm_top (Aggiornato con spmm_target_decoder)
 // ============================================================================
 
+`include "hci_helpers.svh"
+
 import hci_package::*;
 import hwpe_ctrl_package::*;
-import spmm_pkg::*;     
+import spmm_pkg::*;
 
 module spmm_top #(
     parameter int unsigned DATA_WIDTH      = 8,           // INT8 data width
@@ -15,7 +17,8 @@ module spmm_top #(
     parameter int unsigned STREAM_WORD_BIT = 128,         // PULP Streamer word width
     parameter int unsigned DATA_WIDTH_OUT  = 8,           // Output precision
     parameter int unsigned N_CORES         = 8,
-    parameter bit          USE_LATCHES     = 0            // 1: Clock Gating + Latches, 0: Flip-Flops
+    parameter bit          USE_LATCHES     = 0,           // 1: Clock Gating + Latches, 0: Flip-Flops
+    parameter hci_package::hci_size_parameter_t `HCI_SIZE_PARAM(tcdm_master) = hci_package::DEFAULT_HCI_SIZE
 )(
     input  logic                                                clk_i,
     input  logic                                                rst_ni,
@@ -28,6 +31,41 @@ module spmm_top #(
     // --- HWPE-Ctrl Target Port (Front-End Interface) ---
     hwpe_ctrl_intf_periph.slave                                 target
 );
+
+    // -------------------------------------------------------------------------
+    // Virtual (unprotected) TCDM interface between streamer and ECC encoder.
+    // It has exactly the same dimensions as the physical cluster interface.
+    // -------------------------------------------------------------------------
+    localparam hci_size_parameter_t `HCI_SIZE_PARAM(tcdm_master_raw) =
+        `HCI_SIZE_PARAM(tcdm_master);
+    `HCI_INTF(tcdm_master_raw, clk_i);
+
+    // HCI ECC: one 7-bit SEC-DED code per 32-bit data chunk, plus metadata ECC.
+    localparam int unsigned TCDM_ECC_CHUNK_SIZE = 32;
+    localparam int unsigned TCDM_ECC_N_CHUNKS =
+        HCI_SIZE_tcdm_master.DW / TCDM_ECC_CHUNK_SIZE;
+
+    logic [TCDM_ECC_N_CHUNKS-1:0] tcdm_r_data_single_err;
+    logic [TCDM_ECC_N_CHUNKS-1:0] tcdm_r_data_multi_err;
+    logic                        tcdm_r_meta_single_err;
+    logic                        tcdm_r_meta_multi_err;
+
+    // Encode request data and metadata before the cluster interconnect;
+    // decode/correct ECC-protected read responses before returning them
+    // to the streamer.
+    hci_ecc_enc #(
+        .CHUNK_SIZE                          ( TCDM_ECC_CHUNK_SIZE ),
+        .ENABLE_DATA                         ( 1'b1                ),
+        .`HCI_SIZE_PARAM(tcdm_target)        ( `HCI_SIZE_PARAM(tcdm_master_raw) ),
+        .`HCI_SIZE_PARAM(tcdm_initiator)     ( `HCI_SIZE_PARAM(tcdm_master)     )
+    ) i_spmm_tcdm_ecc_enc (
+        .r_data_single_err_o ( tcdm_r_data_single_err ),
+        .r_data_multi_err_o  ( tcdm_r_data_multi_err  ),
+        .r_meta_single_err_o ( tcdm_r_meta_single_err ),
+        .r_meta_multi_err_o  ( tcdm_r_meta_multi_err  ),
+        .tcdm_target         ( tcdm_master_raw        ),
+        .tcdm_initiator      ( tcdm_master            )
+    );
 
     // -------------------------------------------------------------------------
     // Segnali interni per il decoder e la configurazione
@@ -69,7 +107,7 @@ module spmm_top #(
 
     // Streamer <-> C Buffer Read Interconnect
     logic [$clog2(NUM_ROWS)-1:0]                        c_read_row_addr;
-    logic [$clog2((NUM_MACS * DATA_WIDTH_OUT) / STREAM_WORD_BIT)-1:0]                 c_read_word_addr;
+    logic [$clog2((NUM_MACS * DATA_WIDTH_OUT) / STREAM_WORD_BIT)-1:0] c_read_word_addr;
     logic [STREAM_WORD_BIT-1:0]                         c_rdata;
 
     // row_ptr_buffer <-> scheduler
@@ -83,11 +121,11 @@ module spmm_top #(
 
     // a_buffer <-> scheduler / datapath
     logic [$clog2(TOTAL_NNZ)-1:0]                       a_read_addr;
-    logic unsigned [DATA_WIDTH-1:0]                       a_data;
+    logic unsigned [DATA_WIDTH-1:0]                     a_data;
 
     // b_buffer <-> scheduler / datapath
     logic [$clog2(NUM_ROWS)-1:0]                        b_read_row_addr;
-    logic unsigned [NUM_MACS-1:0][DATA_WIDTH-1:0]         b_data;
+    logic unsigned [NUM_MACS-1:0][DATA_WIDTH-1:0]       b_data;
 
     // c_buffer <-> scheduler / datapath
     logic                                               c_buf_write_en;
@@ -99,7 +137,7 @@ module spmm_top #(
     logic [DATA_WIDTH-1:0]                              dp_nnz_iterations;
     logic                                               dp_out_valid;
     logic                                               dp_out_ready;
-    logic unsigned [NUM_MACS-1:0][DATA_WIDTH_OUT-1:0]    dp_data_out;
+    logic unsigned [NUM_MACS-1:0][DATA_WIDTH_OUT-1:0]   dp_data_out;
     logic                                               dp_matrix_end;
 
     // -------------------------------------------------------------------------
@@ -127,10 +165,10 @@ module spmm_top #(
         .c_base_addr_i        (accel_config.c_base_addr),
         .row_ptr_num_words_i  (accel_config.row_ptr_num_words),
         .b_num_words_i        (accel_config.b_num_words),
-        .tcdm_master          (tcdm_master),
+        .tcdm_master          (tcdm_master_raw),
         .a_write_en_o         (a_write_en),
         .a_wdata_o            (a_wdata),
-        .b_write_en_o         (b_write_en),
+        .b_write_en_o          (b_write_en),
         .b_wdata_o            (b_wdata),
         .col_id_write_en_o    (col_id_write_en),
         .col_id_wdata_o       (col_id_wdata),
@@ -149,7 +187,7 @@ module spmm_top #(
     a_buffer #(
         .DATA_WIDTH      (DATA_WIDTH),
         .TOTAL_NNZ       (TOTAL_NNZ),
-        .STREAM_WORD_BIT (STREAM_WORD_BIT),       
+        .STREAM_WORD_BIT (STREAM_WORD_BIT),
         .USE_LATCHES     (USE_LATCHES)
     ) i_a_buffer (
         .clk_i             (clk_i),
@@ -165,7 +203,7 @@ module spmm_top #(
         .DATA_WIDTH      (DATA_WIDTH),
         .NUM_MACS        (NUM_MACS),
         .NUM_B_ROWS      (NUM_ROWS),
-        .STREAM_WORD_BIT (STREAM_WORD_BIT),    
+        .STREAM_WORD_BIT (STREAM_WORD_BIT),
         .USE_LATCHES     (USE_LATCHES)
     ) i_b_buffer (
         .clk_i             (clk_i),
