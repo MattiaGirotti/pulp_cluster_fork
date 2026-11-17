@@ -173,13 +173,13 @@ addrmap spmm_regif {
         name = "LENGTHS";
         field {
             name = "b_num_words";
-            desc = "Number of 128-bit words for matrix B.";
+            desc = "Number of 256-bit words for matrix B.";
             hw = r;
             sw = rw;
         } b_num_words[31:16] = 0;
         field {
             name = "row_ptr_num_words";
-            desc = "Number of 128-bit words for row pointers.";
+            desc = "Number of 256-bit words for row pointers.";
             hw = r;
             sw = rw;
         } row_ptr_num_words[15:0] = 0;

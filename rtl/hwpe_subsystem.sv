@@ -148,7 +148,7 @@ module hwpe_subsystem
     .NUM_ROWS   ( 16 ),          // Number of rows
     .TOTAL_NNZ  ( 255 ),          // Max total non-zero elements
     .TOTAL_PTRS      ( 17 ),          // Total row pointers
-    .STREAM_WORD_BIT ( 128 ),         // PULP Streamer word width
+    .STREAM_WORD_BIT ( 256 ),         // PULP Streamer word width
     .DATA_WIDTH_OUT  ( 8 ),           // Output precision
     .N_CORES    ( N_CORES ),
     .USE_LATCHES     ( 0 ),
